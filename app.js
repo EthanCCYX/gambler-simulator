@@ -517,13 +517,38 @@ $('tab-baccarat').addEventListener('click', () => {
 $('sl-bet').addEventListener('input', e => {
   S.baseBet = parseInt(e.target.value);
   $('fv-bet').textContent = fmt(S.baseBet);
+  $('inp-bet').value = S.baseBet;
   if (!S.running) { S.currentBet = S.baseBet; $('chip').textContent = fmt(S.baseBet); $('cur-bet').textContent = fmt(S.baseBet); }
+});
+$('inp-bet').addEventListener('change', e => {
+  S.baseBet = Math.max(1, Math.min(100000, parseInt(e.target.value) || 100));
+  e.target.value = S.baseBet;
+  $('sl-bet').value = Math.min(S.baseBet, 2000);
+  $('fv-bet').textContent = fmt(S.baseBet);
+  if (!S.running) { S.currentBet = S.baseBet; $('chip').textContent = fmt(S.baseBet); $('cur-bet').textContent = fmt(S.baseBet); }
+});
+$('inp-bet').addEventListener('input', e => {
+  // Real-time sync: update slider as user types
+  const v = parseInt(e.target.value);
+  if (v) { $('sl-bet').value = Math.min(v, 2000); $('fv-bet').textContent = fmt(v); }
 });
 
 $('sl-rnd').addEventListener('input', e => {
   S.maxRounds = parseInt(e.target.value);
   $('fv-rnd').textContent = S.maxRounds;
+  $('inp-rnd').value = S.maxRounds;
   $('pl-t').textContent = `${S.rounds} / ${S.maxRounds} 局`;
+});
+$('inp-rnd').addEventListener('change', e => {
+  S.maxRounds = Math.max(10, Math.min(100000, parseInt(e.target.value) || 500));
+  e.target.value = S.maxRounds;
+  $('sl-rnd').value = Math.min(S.maxRounds, 10000);
+  $('fv-rnd').textContent = S.maxRounds;
+  $('pl-t').textContent = `${S.rounds} / ${S.maxRounds} 局`;
+});
+$('inp-rnd').addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  if (v) { $('sl-rnd').value = Math.min(v, 10000); $('fv-rnd').textContent = v; }
 });
 
 $('sl-spd').addEventListener('input', e => {

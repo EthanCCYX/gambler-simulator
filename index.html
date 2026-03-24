@@ -146,7 +146,7 @@
     .conc-l strong{color:var(--lose);font-weight:600}
 
     .info-btn{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--bg);border:1px solid var(--bd);color:var(--ts);font-size:9px;cursor:help;position:relative;flex-shrink:0}
-    .info-btn:hover::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);background:var(--bgc);border:1px solid var(--bd);border-radius:6px;padding:7px 9px;font-size:11px;color:var(--tp);white-space:nowrap;z-index:100;max-width:220px;white-space:normal;line-height:1.4;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+    .info-btn:hover::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:var(--bgc);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--tp);z-index:100;max-width:320px;white-space:normal;line-height:1.7;box-shadow:0 6px 20px rgba(0,0,0,.5)}
 
     /* Footer */
     #ftr{display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--bgp);border-top:1px solid var(--bd);font-size:11px;color:var(--ts);font-family:'Share Tech Mono',monospace}
@@ -210,14 +210,20 @@
         <div class="fl">下注金额 <span class="fv" id="fv-bet">$100</span>
           <span class="info-btn" data-tip="每局固定下注的基准金额。赌注越大，破产速度越快。">?</span>
         </div>
-        <input type="range" id="sl-bet" min="1" max="2000" value="100" step="10" />
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+          <input type="number" id="inp-bet" value="100" min="1" max="100000" step="1" style="flex:1" />
+          <input type="range" id="sl-bet" min="1" max="2000" value="100" step="10" style="flex:2" />
+        </div>
       </div>
 
       <div class="card">
         <div class="fl">最大局数 <span class="fv" id="fv-rnd">500</span>
           <span class="info-btn" data-tip="模拟的最大游戏局数。局数越多，数学定律越明显。">?</span>
         </div>
-        <input type="range" id="sl-rnd" min="50" max="10000" value="500" step="50" />
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+          <input type="number" id="inp-rnd" value="500" min="10" max="100000" step="10" style="flex:1" />
+          <input type="range" id="sl-rnd" min="50" max="10000" value="500" step="50" style="flex:2" />
+        </div>
       </div>
 
       <div class="card">
