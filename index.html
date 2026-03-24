@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>赌徒模拟器 — 看清赌博的数学真相</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%B2%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0e14;--bgp:#111820;--bgc:#1a2332;--bd:#2a3a50;
+      --tp:#e8edf5;--ts:#6b7a94;
+      --win:#00e676;--lose:#ff3d3d;--neu:#ffd600;
+      --chip:#00b0ff;--gold:#ffc400;--acc:#7c4dff;--warn:#ff9100;--dan:#ff1744;
+    }
+    html,body{height:100%;background:var(--bg);color:var(--tp);font-family:'Inter',sans-serif;font-size:14px;overflow:hidden}
+    #app{display:grid;grid-template-rows:52px 1fr 44px;height:100vh}
+
+    /* Header */
+    #hdr{display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--bgp);border-bottom:1px solid var(--bd);z-index:10}
+    .logo{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+    .logo span{color:var(--ts);font-weight:500}
+    .badge{font-family:'Share Tech Mono',monospace;font-size:12px;padding:4px 12px;border-radius:20px;background:var(--bgc);border:1px solid var(--bd);color:var(--chip)}
+
+    /* Main grid */
+    #main{display:grid;grid-template-columns:268px 1fr 298px;overflow:hidden}
+
+    /* Panels */
+    .panel{background:var(--bgp);border-right:1px solid var(--bd);overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:11px}
+    .panel:last-child{border-right:none;border-left:1px solid var(--bd)}
+    .panel::-webkit-scrollbar{width:4px}
+    .panel::-webkit-scrollbar-track{background:transparent}
+    .panel::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+
+    .card{background:var(--bgc);border:1px solid var(--bd);border-radius:10px;padding:12px}
+    .card-title{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;color:var(--ts);text-transform:uppercase;margin-bottom:9px}
+
+    /* Controls */
+    .mode-tabs{display:flex;gap:3px;background:var(--bg);border-radius:8px;padding:4px}
+    .mode-tab{flex:1;padding:7px 2px;text-align:center;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;transition:all .2s;color:var(--ts);border:1px solid transparent}
+    .mode-tab:hover{color:var(--tp)}
+    .mode-tab.active{background:var(--bgc);color:var(--gold);border-color:var(--gold)}
+
+    .fl{font-size:11px;color:var(--ts);font-weight:500;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+    .fv{font-family:'Share Tech Mono',monospace;color:var(--chip);font-size:13px}
+
+    input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--bg);border-radius:2px;outline:none;cursor:pointer}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--chip);border:2px solid var(--bg);cursor:pointer}
+    input[type=number]{background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tp);padding:6px 10px;font-family:'Share Tech Mono',monospace;font-size:14px;width:100%;outline:none}
+    input[type=number]:focus{border-color:var(--chip)}
+    select{background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--tp);padding:7px 10px;font-family:Inter,sans-serif;font-size:13px;width:100%;outline:none;cursor:pointer}
+    select:focus{border-color:var(--chip)}
+
+    .sdesc{font-size:11px;color:var(--ts);line-height:1.5;padding:8px 10px;background:var(--bg);border-radius:6px;border-left:2px solid var(--acc);margin-top:-3px}
+
+    .btn{width:100%;padding:14px;border:none;border-radius:10px;font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all .15s}
+    .btn-start{background:linear-gradient(135deg,var(--win),#00c853);color:#000}
+    .btn-start:hover{filter:brightness(1.1);transform:translateY(-1px)}
+    .btn-pause{background:linear-gradient(135deg,var(--warn),#ff6d00);color:#000}
+    .btn-rst{background:var(--bg);color:var(--ts);font-size:12px;letter-spacing:1px;padding:9px;border:1px solid var(--bd)}
+    .btn-rst:hover{border-color:var(--ts);color:var(--tp)}
+
+    /* Game Area */
+    #ga{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;background:var(--bg);position:relative;overflow:hidden}
+    #ga::before{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--bd) 1px,transparent 1px),linear-gradient(90deg,var(--bd) 1px,transparent 1px);background-size:40px 40px;opacity:.06;pointer-events:none}
+
+    /* Dice */
+    .dc{width:108px;height:108px;perspective:500px}
+    .d{width:108px;height:108px;position:relative;transform-style:preserve-3d;transition:transform .35s cubic-bezier(.25,.46,.45,.94)}
+    .d.rolling{animation:droll .42s ease-in-out}
+    @keyframes droll{0%{transform:rotateX(0) rotateY(0)}25%{transform:rotateX(180deg) rotateY(90deg)}50%{transform:rotateX(360deg) rotateY(180deg)}75%{transform:rotateX(540deg) rotateY(270deg)}100%{transform:rotateX(720deg) rotateY(360deg)}}
+    .df{position:absolute;width:108px;height:108px;background:linear-gradient(145deg,#1e2a3a,#0d1520);border:2px solid var(--bd);border-radius:13px;backface-visibility:hidden;padding:12px}
+    .df.front{transform:rotateY(0deg) translateZ(54px)}
+    .df.back{transform:rotateY(180deg) translateZ(54px)}
+    .df.right{transform:rotateY(90deg) translateZ(54px)}
+    .df.left{transform:rotateY(-90deg) translateZ(54px)}
+    .df.top{transform:rotateX(90deg) translateZ(54px)}
+    .df.bottom{transform:rotateX(-90deg) translateZ(54px)}
+    /* 3x3 dot grid per face */
+    .dg{position:absolute;inset:12px;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr;gap:5px;align-items:center;justify-items:center}
+    .ddot{width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#bbb);box-shadow:0 2px 4px rgba(0,0,0,.4),inset 0 -2px 3px rgba(0,0,0,.2);opacity:0;transition:opacity .1s}
+    .ddot.on{opacity:1}
+
+    /* Result flash */
+    .rf{font-family:'Rajdhani',sans-serif;font-size:44px;font-weight:700;letter-spacing:6px;text-transform:uppercase;height:54px;display:flex;align-items:center;justify-content:center;transition:opacity .3s}
+    .rf.win{color:var(--win);text-shadow:0 0 30px var(--win)}
+    .rf.lose{color:var(--lose);text-shadow:0 0 30px var(--lose)}
+
+    /* Balance */
+    .bal{text-align:center}
+    .bal-lbl{font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:3px;color:var(--ts);text-transform:uppercase}
+    .bal-val{font-family:'Share Tech Mono',monospace;font-size:52px;line-height:1.1;transition:color .3s}
+    .bal-val.normal{color:var(--tp)}
+    .bal-val.warn{color:var(--warn)}
+    .bal-val.dan{color:var(--dan);animation:dpulse .8s infinite}
+    @keyframes dpulse{0%,100%{opacity:1}50%{opacity:.5}}
+    .bal-chg{font-family:'Share Tech Mono',monospace;font-size:16px;height:20px;margin-top:4px}
+    .bal-chg.p{color:var(--win)}
+    .bal-chg.n{color:var(--lose)}
+
+    /* Bet area */
+    .ba{display:flex;align-items:center;gap:14px;padding:13px 20px;background:var(--bgp);border:1px solid var(--bd);border-radius:12px}
+    .chip{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--chip),#0088cc);border:3px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:bold;color:#fff;box-shadow:0 4px 12px rgba(0,176,255,.4);animation:cfloat 2s ease-in-out infinite;flex-shrink:0}
+    @keyframes cfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+    .bi{text-align:center}
+    .bi-l{font-size:10px;color:var(--ts);letter-spacing:1px}
+    .bi-v{font-family:'Share Tech Mono',monospace;font-size:22px;color:var(--gold)}
+
+    /* History strip */
+    .hs{display:flex;gap:3px;align-items:center;padding:7px 14px;background:var(--bgp);border:1px solid var(--bd);border-radius:8px;max-width:460px;width:100%;overflow:hidden}
+    .hs-l{font-size:9px;color:var(--ts);letter-spacing:1px;white-space:nowrap;margin-right:5px;text-transform:uppercase;flex-shrink:0}
+    .hd{display:flex;gap:3px;overflow:hidden;flex-wrap:nowrap}
+    .hdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+    .hdot.w{background:var(--win);box-shadow:0 0 4px var(--win)}
+    .hdot.l{background:var(--lose);box-shadow:0 0 4px var(--lose)}
+
+    /* Progress */
+    .pw{max-width:460px;width:100%}
+    .pbb{width:100%;height:4px;background:var(--bgc);border-radius:2px;overflow:hidden}
+    .pbf{height:100%;background:linear-gradient(90deg,var(--win),var(--chip));border-radius:2px;transition:width .3s}
+    .pl{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--ts);font-family:'Share Tech Mono',monospace}
+
+    /* Stats */
+    .sr{grid-template-columns:1fr 1fr;gap:7px;display:grid}
+    .sc{background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:9px;text-align:center}
+    .sc.w{border-color:rgba(0,230,118,.3)}
+    .sc.l{border-color:rgba(255,61,61,.3)}
+    .sc-v{font-family:'Share Tech Mono',monospace;font-size:20px;line-height:1.2;color:var(--tp)}
+    .sc.w .sc-v{color:var(--win)}
+    .sc.l .sc-v{color:var(--lose)}
+    .sc-l{font-size:9px;color:var(--ts);letter-spacing:1px;text-transform:uppercase;margin-top:3px}
+
+    canvas{display:block;width:100%}
+    .cw{position:relative;width:100%}
+
+    .hmg{grid-template-columns:repeat(10,1fr);gap:3px;display:grid}
+    .hmc{aspect-ratio:1;border-radius:2px;background:var(--bg);transition:background .3s}
+
+    .conc{border:1px solid var(--bd);border-radius:10px;padding:12px;background:var(--bg)}
+    .conc-t{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:7px;text-transform:uppercase}
+    .conc-l{font-size:12px;color:var(--ts);line-height:1.6;margin-bottom:5px}
+    .conc-l em{color:var(--tp);font-style:normal}
+    .conc-l strong{color:var(--lose);font-weight:600}
+
+    .info-btn{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--bg);border:1px solid var(--bd);color:var(--ts);font-size:9px;cursor:help;position:relative;flex-shrink:0}
+    .info-btn:hover::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);background:var(--bgc);border:1px solid var(--bd);border-radius:6px;padding:7px 9px;font-size:11px;color:var(--tp);white-space:nowrap;z-index:100;max-width:220px;white-space:normal;line-height:1.4;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+
+    /* Footer */
+    #ftr{display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--bgp);border-top:1px solid var(--bd);font-size:11px;color:var(--ts);font-family:'Share Tech Mono',monospace}
+    .fs{display:flex;gap:6px;align-items:center}
+    .fs span{color:var(--chip)}
+    .sd{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--win);margin-right:4px;animation:blink 1s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+    /* Game Over */
+    #go{display:none;position:fixed;inset:0;background:rgba(10,14,20,.92);z-index:80;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+    #go.show{display:flex}
+    .go-t{font-family:'Rajdhani',sans-serif;font-size:58px;font-weight:700;color:var(--dan);letter-spacing:8px;text-transform:uppercase;text-shadow:0 0 40px var(--dan)}
+    .go-s{font-size:14px;color:var(--ts);text-align:center;max-width:400px;line-height:1.7}
+    .go-st{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px}
+    .go-g{text-align:center;padding:11px;background:var(--bgc);border-radius:8px;border:1px solid var(--bd)}
+    .go-gv{font-family:'Share Tech Mono',monospace;font-size:24px;color:var(--tp)}
+    .go-gl{font-size:9px;color:var(--ts);letter-spacing:1px;text-transform:uppercase;margin-top:3px}
+    .go-b{margin-top:6px;padding:11px 38px;background:var(--win);color:#000;border:none;border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;text-transform:uppercase}
+    .go-b:hover{filter:brightness(1.1)}
+
+    /* Edge warning */
+    #ew{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:0;transition:opacity .3s}
+    #ew.on{opacity:1;animation:epulse 1s infinite}
+    #ew::before{content:'';position:absolute;inset:0;box-shadow:inset 0 0 80px 20px rgba(255,23,68,.25)}
+    @keyframes epulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+    /* Particles */
+    .par{position:fixed;pointer-events:none;border-radius:50%;z-index:60;animation:pf .8s ease-out forwards}
+    @keyframes pf{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+
+    /* Responsive */
+    @media(max-width:900px){#main{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}body{overflow:auto}#app{height:auto}.panel{border-right:none;border-bottom:1px solid var(--bd)}.panel:last-child{border-left:none;border-top:1px solid var(--bd)}}
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header id="hdr">
+    <div class="logo">&#127920; 赌徒<span>模拟器</span></div>
+    <div class="badge" id="badge">经典模式 &middot; 50% 胜率</div>
+  </header>
+
+  <main id="main">
+
+    <!-- CONTROL PANEL -->
+    <aside class="panel">
+      <div class="card">
+        <div class="card-title">游戏模式</div>
+        <div class="mode-tabs">
+          <div class="mode-tab active" id="tab-classic">经典 50%</div>
+          <div class="mode-tab" id="tab-baccarat">百家乐 48%</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="fl">初始资金 <span class="fv" id="fv-ib">$10,000</span></div>
+        <input type="number" id="inp-ib" value="10000" min="100" max="1000000" step="100" />
+      </div>
+
+      <div class="card">
+        <div class="fl">下注金额 <span class="fv" id="fv-bet">$100</span>
+          <span class="info-btn" data-tip="每局固定下注的基准金额。赌注越大，破产速度越快。">?</span>
+        </div>
+        <input type="range" id="sl-bet" min="1" max="2000" value="100" step="10" />
+      </div>
+
+      <div class="card">
+        <div class="fl">最大局数 <span class="fv" id="fv-rnd">500</span>
+          <span class="info-btn" data-tip="模拟的最大游戏局数。局数越多，数学定律越明显。">?</span>
+        </div>
+        <input type="range" id="sl-rnd" min="50" max="10000" value="500" step="50" />
+      </div>
+
+      <div class="card">
+        <div class="fl">模拟速度 <span class="fv" id="fv-spd">标准</span></div>
+        <input type="range" id="sl-spd" min="1" max="5" value="2" step="1" />
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ts);margin-top:2px">
+          <span>闪电</span><span>慢速</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">下注策略</div>
+        <select id="sel-str">
+          <option value="fixed">固定注码</option>
+          <option value="martingale">倍投法（追输）</option>
+          <option value="parlay">利润全押</option>
+          <option value="ratio">本金10%下注</option>
+          <option value="random">情绪化随机</option>
+        </select>
+        <div class="sdesc" id="sdesc">每局下注相同金额，稳定亏损。大数定律的最纯粹演示。</div>
+      </div>
+
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-start" id="btn-main">&#9654; 开始模拟</button>
+        <button class="btn btn-rst" id="btn-rst">&#8634; 重置</button>
+      </div>
+    </aside>
+
+    <!-- GAME AREA -->
+    <section id="ga">
+      <div class="dc">
+        <div class="d" id="dice">
+          <!-- front=1, back=6, right=2, left=5, top=3, bottom=4 -->
+          <div class="df front"  id="df-1"><div class="dg" id="dg-1"></div></div>
+          <div class="df back"   id="df-6"><div class="dg" id="dg-6"></div></div>
+          <div class="df right"  id="df-2"><div class="dg" id="dg-2"></div></div>
+          <div class="df left"   id="df-5"><div class="dg" id="dg-5"></div></div>
+          <div class="df top"    id="df-3"><div class="dg" id="dg-3"></div></div>
+          <div class="df bottom" id="df-4"><div class="dg" id="dg-4"></div></div>
+        </div>
+      </div>
+
+      <div class="rf" id="flash"></div>
+
+      <div class="bal">
+        <div class="bal-lbl">当前余额</div>
+        <div class="bal-val normal" id="bal-v">$10,000</div>
+        <div class="bal-chg" id="bal-c"></div>
+      </div>
+
+      <div class="ba">
+        <div class="chip" id="chip">$100</div>
+        <div class="bi"><div class="bi-l">当前下注</div><div class="bi-v" id="cur-bet">$100</div></div>
+        <span class="info-btn" data-tip="赌徒谬误：连续输了几局后觉得「该赢了吧」？错！每局相互独立，历史不影响未来概率。">?</span>
+      </div>
+
+      <div class="hs">
+        <div class="hs-l">历史</div>
+        <div class="hd" id="hd"></div>
+      </div>
+
+      <div class="pw">
+        <div class="pbb"><div class="pbf" id="pbf" style="width:0%"></div></div>
+        <div class="pl">
+          <span id="pl-t">0 / 500 局</span>
+          <span id="pl-s">连胜 0 | 连负 0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS PANEL -->
+    <aside class="panel">
+      <div class="sr">
+        <div class="sc w"><div class="sc-v" id="sc-w">0</div><div class="sc-l">胜利</div></div>
+        <div class="sc l"><div class="sc-v" id="sc-l">0</div><div class="sc-l">失败</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">胜率走势</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="cw" style="flex:1"><canvas id="wr-canvas" height="38"></canvas></div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:26px;color:var(--tp)" id="wr-pct">—</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--ts)">
+          <span>理论: <span id="th-rt">50%</span></span>
+          <span>偏差: <span id="rt-dev">—</span></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">资产曲线</div>
+        <div class="cw"><canvas id="bal-canvas" height="110"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">历史热力图 <span style="font-size:9px;color:var(--ts);font-weight:400">(最近50局)</span></div>
+        <div class="hmg" id="hmg"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">关键指标</div>
+        <div class="sr">
+          <div class="sc"><div class="sc-v" id="sc-mw">$0</div><div class="sc-l">最大单局赢</div></div>
+          <div class="sc"><div class="sc-v" id="sc-ml">$0</div><div class="sc-l">最大单局输</div></div>
+          <div class="sc"><div class="sc-v" id="sc-sw">0</div><div class="sc-l">最长连胜</div></div>
+          <div class="sc"><div class="sc-v" id="sc-sl">0</div><div class="sc-l">最长连负</div></div>
+          <div class="sc"><div class="sc-v" id="sc-roi" style="color:var(--tp)">0%</div><div class="sc-l">回报率</div></div>
+          <div class="sc"><div class="sc-v" id="sc-ev">-$0</div><div class="sc-l">理论亏损</div></div>
+        </div>
+      </div>
+
+      <div class="conc">
+        <div class="conc-t">&#128161; 数学告诉你</div>
+        <div class="conc-l" id="cl1">开始模拟，观察大数定律如何蚕食本金。</div>
+        <div class="conc-l" id="cl2">50% 胜率不等于能赢——长期玩必然归零。</div>
+      </div>
+    </aside>
+  </main>
+
+  <footer id="ftr">
+    <div class="fs">速度: <span id="ft-spd"><span class="sd"></span>标准</span></div>
+    <div class="fs">已模拟: <span id="ft-rnd">0</span> 局</div>
+    <div class="fs">间隔: <span id="ft-dly">100ms</span></div>
+    <div class="fs" style="color:var(--ts)">经典: 掷1-6大于3赢 | 百家乐: 48%胜率+5%抽水</div>
+  </footer>
+</div>
+
+<!-- Game Over -->
+<div id="go">
+  <div class="go-t">输光了</div>
+  <div class="go-s" id="go-s">本金归零，你不是第一个，也不会是最后一个。</div>
+  <div class="go-st">
+    <div class="go-g"><div class="go-gv" id="go-r">0</div><div class="go-gl">坚持局数</div></div>
+    <div class="go-g"><div class="go-gv" id="go-w">0</div><div class="go-gl">胜场</div></div>
+    <div class="go-g"><div class="go-gv" id="go-p">0%</div><div class="go-gl">胜率</div></div>
+  </div>
+  <button class="go-b" id="go-b">再试一次</button>
+</div>
+
+<!-- Edge Warning -->
+<div id="ew"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
